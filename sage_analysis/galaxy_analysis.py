@@ -338,6 +338,9 @@ class GalaxyAnalysis:
         models = [
             Model(*model_parameters, *global_model_parameters)
             for model_parameters in map(list, zip(*individual_model_parameters))
+            #idea is that individual_model_parameters is a list of properties, and EACH ELEMENT is a list of each model's relevant property
+            #but we'd rather structure the list so that each element is list of all of A MODEL's properties
+            #also, global_model_parameters are true for all models I guess 
         ]
         self._models = models
 
@@ -354,6 +357,7 @@ class GalaxyAnalysis:
             calculation_functions = generate_func_dict(
                 plot_toggles, module_name="sage_analysis.example_calcs", function_prefix="calc_"
             )
+        # Jerry - either pass calculation_functions myself or if none, dict gets created 
 
         # Because we have adjusted the SMF, check if it's in the calculation dict.
         for model in models:
@@ -383,6 +387,8 @@ class GalaxyAnalysis:
             for name, galaxy_properties in galaxy_properties_to_analyze.items():
                 for snapshot, _ in enumerate(model._redshifts):
                     self._initialise_properties(name, model, galaxy_properties, snapshot)
+            # basically, initialize at all redshifts for each model (?); the galaxy_properties parameter passed is the value part of the 
+            # key-value pair for the galaxy_properties_to_analyze dict, i.e., we initialize for stellar_mass_bins, then halo_mass_bins, etc. 
 
             model._calculation_functions = calculation_functions
 
