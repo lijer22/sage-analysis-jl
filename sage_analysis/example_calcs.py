@@ -22,45 +22,45 @@ from scipy import stats
 
 from sage_analysis.model import Model
 
-# def calc_BHMF(
-#     model: Model,
-#     gals,
-#     snapshot: int,
-#     calc_sub_populations: bool = False,
-#     smf_property_name: str = "SMF"
-# ):
-#     """
-#     Calculates the stellar mass function of the given galaxies.  That is, the number of galaxies at a given stellar
-#     mass.
+def calc_BHMF(
+    model: Model,
+    gals,
+    snapshot: int,
+    calc_sub_populations: bool = False,
+    bhmf_property_name: str = "BHMF"
+):
+    """
+    Calculates the stellar mass function of the given galaxies.  That is, the number of galaxies at a given stellar
+    mass.
 
-#     The ``Model.properties["snapshot_<snapshot>"]"SMF"]`` array will be updated. We also split the galaxy population
-#     into "red" and "blue" based on the value of :py:attr:`~sage_analysis.model.Model.sSFRcut` and update the
-#     ``Model.properties["snapshot_<snapshot>"]["red_SMF"]`` and ``Model.properties["snapshot_<snapshot>"]["blue_SMF"]``
-#     arrays.
+    The ``Model.properties["snapshot_<snapshot>"]"SMF"]`` array will be updated. We also split the galaxy population
+    into "red" and "blue" based on the value of :py:attr:`~sage_analysis.model.Model.sSFRcut` and update the
+    ``Model.properties["snapshot_<snapshot>"]["red_SMF"]`` and ``Model.properties["snapshot_<snapshot>"]["blue_SMF"]``
+    arrays.
 
-#     Parameters
-#     ----------
-#     snapshot : int
-#         The snapshot the SMF is being calculated at.
+    Parameters
+    ----------
+    snapshot : int
+        The snapshot the SMF is being calculated at.
 
-#     plot_sub_populations : boolean, optional
-#         If ``True``, calculates the stellar mass function for red and blue sub-populations.
+    plot_sub_populations : boolean, optional
+        If ``True``, calculates the stellar mass function for red and blue sub-populations.
 
-#     smf_property_name : string, optional
-#         The name of the property used to store the stellar mass function. Useful if different calculations are
-#         computing the stellar mass function but saving it as a different property.
-#     """
+    smf_property_name : string, optional
+        The name of the property used to store the stellar mass function. Useful if different calculations are
+        computing the stellar mass function but saving it as a different property.
+    """
 
-#     non_zero_bh = np.where(gals["BlackHoleMass"][:] > 0.0)[0]
+    non_zero_bh = np.where(gals["BlackHoleMass"][:] > 0.0)[0]
 
-#     if len(non_zero_bh) == 0:
-#         logger.info(f"Could not find any galaxies with non-zero stellar mass for the stellar mass function.")
-#         return
+    if len(non_zero_bh) == 0:
+        logger.info(f"Could not find any galaxies with non-zero stellar mass for the stellar mass function.")
+        return
 
-#     bh_mass = np.log10(gals["BlackHoleMass"][:][non_zero_bh] * 1.0e10 / model.hubble_h)
+    bh_mass = np.log10(gals["BlackHoleMass"][:][non_zero_bh] * 1.0e10 / model.hubble_h)
 
-#     gals_per_bin, _ = np.histogram(bh_mass, bins=np.arange(4.0, 12.0 + 0.1, 0.1))
-#     model.properties[f"snapshot_{snapshot}"][f"{smf_property_name}"] += gals_per_bin
+    gals_per_bin, _ = np.histogram(bh_mass, bins=model.bins["bh_mass_bins"])
+    model.properties[f"snapshot_{snapshot}"][f"{bhmf_property_name}"] += gals_per_bin
 
 def calc_SMF(
     model: Model,

@@ -92,123 +92,119 @@ def plot_bh_sm(
 
     fig.tight_layout()
 
-    output_file = f"{plot_helper.output_path}8.BlackHoleStellarMassRelationship.{plot_helper.output_format}"
+    output_file = f"{plot_helper.output_path}BlackHoleStellarMassRelationship.{plot_helper.output_format}"
     fig.savefig(output_file)
     print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
 
-# def plot_BHMF(
-#     models: List[Model],
-#     snapshots: List[List[int]],
-#     plot_helper: PlotHelper,
-#     plot_sub_populations: bool = False
-# ) -> matplotlib.figure.Figure:
-#     """
-#     Plots the stellar mass function for the specified models.
+def plot_BHMF(
+    models: List[Model],
+    snapshots: List[List[int]],
+    plot_helper: PlotHelper,
+    plot_sub_populations: bool = False
+) -> matplotlib.figure.Figure:
+    """
+    Plots the stellar mass function for the specified models.
 
-#     Parameters
-#     ----------
-#     models : List of :py:class:`~sage_analysis.model.Model` class instance
-#         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
-#         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+    Parameters
+    ----------
+    models : List of :py:class:`~sage_analysis.model.Model` class instance
+        Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
+        ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-#     snapshots : nested list of ints
-#         The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
 
-#         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the stellar mass
-#         function of all snapshots are plotted on the figure.
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the stellar mass
+        function of all snapshots are plotted on the figure.
 
-#     plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
-#         A helper class that contains attributes and methods to assist with plotting. In particular, the path where
-#         the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
-#         how to initialize this class and its use.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
-#     plot_sub_populations : Boolean, default False
-#         If ``True``, plots the stellar mass function for red and blue sub-populations.
+    Generates
+    ---------
+    The plot will be saved as "<output_path>1.StellarMassFunction.<output_format>"
+    """
 
-#     Generates
-#     ---------
-#     The plot will be saved as "<output_path>1.StellarMassFunction.<output_format>"
-#     """
+    fig = plt.figure(figsize=plot_helper.figsize)
+    ax = fig.add_subplot(111)
 
-#     fig = plt.figure(figsize=plot_helper.figsize)
-#     ax = fig.add_subplot(111)
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-#     # Go through each of the models and plot.
-#     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
+        # Set the x-axis values to be the centre of the bins.
+        bin_widths = model.bins["bh_mass_bins"][1::] - model.bins["bh_mass_bins"][0:-1]
+        bin_middles = model.bins["bh_mass_bins"][:-1] + bin_widths
 
-#         # Set the x-axis values to be the centre of the bins.
-#         bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
-#         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
+        # The SMF is normalized by the simulation volume which is in Mpc/h.
+        normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
 
-#         # The SMF is normalized by the simulation volume which is in Mpc/h.
-#         normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
+        label = model.label
 
-#         # Colour will be used for the model, linestyle for the snapshot.
-#         color = plot_helper.colors[model_num]
-#         label = model.label
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            ls = plot_helper.linestyles[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
-#         for snapshot_num, snapshot in enumerate(model_snapshots):
-#             ls = plot_helper.linestyles[snapshot_num]
+            norm_BHMF = model.properties[f"snapshot_{snapshot}"]["BHMF"] / normalization_factor
+            ax.plot(
+                bin_middles,
+                norm_BHMF,
+                color=color,
+                ls=ls,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f} - All",
+            )
 
-#             norm_SMF = model.properties[f"snapshot_{snapshot}"]["SMF"] / normalization_factor
-#             ax.plot(
-#                 bin_middles,
-#                 norm_SMF,
-#                 color=color,
-#                 ls=ls,
-#                 label=f"{label} - z = {model._redshifts[snapshot]:.2f} - All",
-#             )
+            # if plot_sub_populations:
+            #     norm_red = model.properties[f"snapshot_{snapshot}"]["red_SMF"] / normalization_factor
+            #     norm_blue = model.properties[f"snapshot_{snapshot}"]["blue_SMF"] / normalization_factor
 
-#             if plot_sub_populations:
-#                 norm_red = model.properties[f"snapshot_{snapshot}"]["red_SMF"] / normalization_factor
-#                 norm_blue = model.properties[f"snapshot_{snapshot}"]["blue_SMF"] / normalization_factor
+            #     ax.plot(
+            #         bin_middles,
+            #         norm_red,
+            #         color=color,
+            #         ls=plot_helper.linestyles[model_num+1],
+            #         lw=2,
+            #         label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Red"
+            #     )
+            #     ax.plot(
+            #         bin_middles,
+            #         norm_blue,
+            #         color=color,
+            #         ls=plot_helper.linestyles[model_num+2],
+            #         lw=2,
+            #         label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Blue"
+            #     )
 
-#                 ax.plot(
-#                     bin_middles,
-#                     norm_red,
-#                     color=color,
-#                     ls=plot_helper.linestyles[model_num+1],
-#                     lw=2,
-#                     label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Red"
-#                 )
-#                 ax.plot(
-#                     bin_middles,
-#                     norm_blue,
-#                     color=color,
-#                     ls=plot_helper.linestyles[model_num+2],
-#                     lw=2,
-#                     label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Blue"
-#                 )
+    # For scaling the observational data, we use the values of the zeroth
+    # model.
+    # zeroth_hubble_h = models[0].hubble_h
+    # zeroth_IMF = models[0].IMF
+    # ax = obs.plot_smf_data(ax, zeroth_hubble_h, zeroth_IMF)
 
-#     # For scaling the observational data, we use the values of the zeroth
-#     # model.
-#     zeroth_hubble_h = models[0].hubble_h
-#     zeroth_IMF = models[0].IMF
-#     ax = obs.plot_smf_data(ax, zeroth_hubble_h, zeroth_IMF)
+    ax.set_xlabel(r"$\log_{10} M_{\mathrm{BH}}\ (M_{\odot})$")
+    ax.set_ylabel(r"$\phi\ (\mathrm{Mpc}^{-3}\ \mathrm{dex}^{-1})$")
 
-#     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stars}}\ (M_{\odot})$")
-#     ax.set_ylabel(r"$\phi\ (\mathrm{Mpc}^{-3}\ \mathrm{dex}^{-1})$")
+    ax.set_yscale("log", nonpositive="clip")
 
-#     ax.set_yscale("log", nonpositive="clip")
+    ax.set_xlim([4.0, 10.0])
+    ax.set_ylim([1.0e-6, 1.0e-1])
 
-#     ax.set_xlim([8.0, 12.0])
-#     ax.set_ylim([1.0e-6, 1.0e-1])
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
 
-#     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
+    plot_helper.adjust_legend(ax, location="lower left", scatter_plot=0)
 
-#     plot_helper.adjust_legend(ax, location="lower left", scatter_plot=0)
+    fig.tight_layout()
 
-#     fig.tight_layout()
+    output_file = f"{plot_helper.output_path}BlackHoleMassFunction.{plot_helper.output_format}"
+    fig.savefig(output_file)
+    print(f"Saved file to {output_file}")
+    plt.close()
 
-#     output_file = f"{plot_helper.output_path}1.StellarMassFunction.{plot_helper.output_format}"
-#     fig.savefig(output_file)
-#     print(f"Saved file to {output_file}")
-#     plt.close()
-
-#     return fig
+    return fig
 
 
 def plot_SMF(
@@ -258,11 +254,10 @@ def plot_SMF(
         # The SMF is normalized by the simulation volume which is in Mpc/h.
         normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
 
-        # Colour will be used for the model, linestyle for the snapshot.
-        color = plot_helper.colors[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = plot_helper.colors[snapshot_num]
             ls = plot_helper.linestyles[snapshot_num]
 
             norm_SMF = model.properties[f"snapshot_{snapshot}"]["SMF"] / normalization_factor
@@ -315,7 +310,7 @@ def plot_SMF(
 
     fig.tight_layout()
 
-    output_file = f"{plot_helper.output_path}1.StellarMassFunction.{plot_helper.output_format}"
+    output_file = f"{plot_helper.output_path}StellarMassFunction.{plot_helper.output_format}"
     fig.savefig(output_file)
     print(f"Saved file to {output_file}")
     plt.close()

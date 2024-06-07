@@ -427,6 +427,7 @@ class Model(object):
 
         # Add the bins to the dictionary.
         self.bins[bin_name] = bins
+        # e.g., self.bins["stellar_mass_bins"]
 
         # When making histograms, the right-most bin is closed. Hence the length of the
         # produced histogram will be `len(bins)-1`.

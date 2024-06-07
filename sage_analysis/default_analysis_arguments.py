@@ -30,7 +30,16 @@ default_galaxy_properties_to_analyze = {
             "centrals_MF", "satellites_MF", "quiescent_galaxy_counts",
             "quiescent_centrals_counts", "quiescent_satellites_counts",
             "fraction_bulge_sum", "fraction_bulge_var",
-            "fraction_disk_sum", "fraction_disk_var", "SMF_history",
+            "fraction_disk_sum", "fraction_disk_var", "SMF_history"
+        ],
+    },
+    "bh_mass_bins": {
+        "type": "binned",
+        "bin_low": 0.0,
+        "bin_high": 12.0,
+        "bin_width": 0.1,
+        "property_names": [
+            "BHMF"
         ],
     },
     "halo_mass_bins": {
