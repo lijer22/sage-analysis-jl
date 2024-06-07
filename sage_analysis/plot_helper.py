@@ -33,6 +33,8 @@ class PlotHelper():
                 "r",
                 "c",
                 "m",
+                "k",
+                "k"
             ]
         self._colors = colors
 
@@ -138,7 +140,7 @@ class PlotHelper():
         """
 
         legend = ax.legend(loc=location)
-        handles = legend.legendHandles
+        handles = legend.legend_handles
 
         legend.draw_frame(False)
 

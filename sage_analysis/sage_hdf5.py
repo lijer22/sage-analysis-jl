@@ -60,8 +60,8 @@ class SageHdf5Data(DataClass):
         # The output data will be named via the parameter file with the ``.hdf5`` extension. However, the parameter
         # file could refer to the absolute path or the relative path, so be careful.
         sage_data_path = f"{sage_dict['_base_sage_output_path_absolute']}.hdf5"
-
         try:
+            #print(f"Opening: {sage_data_path}")
             model._hdf5_file = h5py.File(sage_data_path, "r")
         except OSError:
             logger.debug(f"Could not find file {sage_data_path}. Trying a relative path instead.")
@@ -87,11 +87,12 @@ class SageHdf5Data(DataClass):
         self._check_model_compatibility(model, sage_dict)
 
         model._num_output_files = model._hdf5_file["Header"]["Misc"].attrs["num_cores"]
-
-        # The cores to analyze may have a default value.  To allow for this, explicitly set these as if they were read
+        
+        # The cores to analyze may have a default value. To allow for this, explicitly set these as if they were read
         # from the parameter file.
         self.sage_model_dict["_first_file_to_analyze"] = 0
         self.sage_model_dict["_last_file_to_analyze"] = model._num_output_files - 1
+        # _num_output_files comes from above (num_cores)
 
     def _check_model_compatibility(self, model: Model, sage_dict: Optional[Dict[str, Any]]) -> None:
         """
@@ -205,10 +206,11 @@ class SageHdf5Data(DataClass):
         for core_idx in range(model._first_file_to_analyze, model._last_file_to_analyze + 1):
 
             core_key = f"Core_{core_idx}"
-
+            
             # Maybe this Snapshot didn't have any galaxies saved.
             try:
                 ngals += model._hdf5_file[core_key][snap_key].attrs["num_gals"]
+                
             except KeyError:
                 ngals = 0
                 continue
@@ -311,7 +313,9 @@ class SageHdf5Data(DataClass):
 
         # If the file was closed, then ``__bool__()`` will return False.
         if not model._hdf5_file.__bool__():
+            print("test") #debugging
             model._hdf5_file = h5py.File(model.sage_data_path, "r")
+            # re-opens the file from path if closed: .__bool__() == true if open, so if not open, re-open
 
     def close_file(self, model):
         """

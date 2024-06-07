@@ -338,12 +338,12 @@ class GalaxyAnalysis:
         models = [
             Model(*model_parameters, *global_model_parameters)
             for model_parameters in map(list, zip(*individual_model_parameters))
-            #idea is that individual_model_parameters is a list of properties, and EACH ELEMENT is a list of each model's relevant property
+            #idea is that individual_model_parameters is a list of properties, and EACH ELEMENT is a list of each model's value for that property
             #but we'd rather structure the list so that each element is list of all of A MODEL's properties
             #also, global_model_parameters are true for all models I guess 
         ]
         self._models = models
-
+        
         # Determine if the stellar mass function needs to be computed for each model. Important we do this before
         # checking ``calculation_functions``.
         for model in models:
@@ -382,13 +382,16 @@ class GalaxyAnalysis:
 
             # Read the parameter files and update any of the missing parameters.
             self._read_sage_file(model)
+            # ^first_file_to_analyze and last get set here; depends on num_cores which seems like just 1 (?)
+            #print(model._redshifts)
 
             # Also initialise all of the properties that are required.
             for name, galaxy_properties in galaxy_properties_to_analyze.items():
                 for snapshot, _ in enumerate(model._redshifts):
                     self._initialise_properties(name, model, galaxy_properties, snapshot)
-            # basically, initialize at all redshifts for each model (?); the galaxy_properties parameter passed is the value part of the 
-            # key-value pair for the galaxy_properties_to_analyze dict, i.e., we initialize for stellar_mass_bins, then halo_mass_bins, etc. 
+            # basically, initialize at all snapshots for each model (though some properties will remain 0); 
+            # the galaxy_properties parameter passed is the value part of the key-value pair for the galaxy_properties_to_analyze dict, 
+            # i.e., we initialize for stellar_mass_bins, then halo_mass_bins, etc.
 
             model._calculation_functions = calculation_functions
 
@@ -402,6 +405,7 @@ class GalaxyAnalysis:
                     continue
                 history_calculation_functions[func_name] = calculation_function
                 del model._calculation_functions[func_name]
+            # looks at the functions (keys) we passed in history_redshifts and extracts them (if possible) from the calculation_functions dict
 
             model._history_calculation_functions = history_calculation_functions
 
@@ -493,14 +497,21 @@ class GalaxyAnalysis:
             # "All" denotes that we want all of the redshifts, otherwise use the values that were specified.
             if property_redshifts == "All":
                 redshifts = model._redshifts
+                # where does model._redshifts come from?
+                    # seems like they get set originally by read_generic_sage_params   
             else:
                 redshifts = property_redshifts
 
             attrname = f"_history_{property_name}_redshifts"
+            # e.g., attrname = "_history_SMD_history_redshifts"
             setattr(model, attrname, redshifts)
+            # e.g., model._history_SMD_history_redshifts = redshifts
+            # where redshifts is a list of redshifts
 
             # Find the snapshots that are closest to the requested redshifts.
             property_snaps = find_closest_indices(model._redshifts, redshifts)
+            # finds indices of redshifts in model._redshifts that are closest to the values in redshifts
+            # returns a list of the indices (for model._redshifts) with closest redshifts. Indices really just mean snapshot
 
             attrname = f"_history_{property_name}_snapshots"
             setattr(model, attrname, property_snaps)
@@ -524,6 +535,8 @@ class GalaxyAnalysis:
             snaps = getattr(model, f"_history_{property_name}_snapshots")
             snapshots_to_loop.extend(snaps)
 
+        # looks like we make a list of redshifts to analyze over history for each property of the model
+        # then, we seem to grab all of them and put into a list,, maybe to iterate over in order somehow later??
         return list(np.unique(snapshots_to_loop))
 
     def _read_sage_file(self, model: Model) -> None:
@@ -552,6 +565,9 @@ class GalaxyAnalysis:
 
         # Each SAGE output has a specific class written to read in the data.
         model.data_class = self._output_format_data_classes_dict[model._sage_output_format](model, model.sage_file)
+        # self._output_format_data_classes_dict is a dict: {"sage_binary": SageBinaryData, "sage_hdf5": SageHdf5Data}, usually
+        # then, self.SageHDF5Data(model, model.sage_file) initializes a sage_analysis.sage_hdf5.SageHdf5Data object, which actually reads file
+        # also, model.sage_file is the parameter file
 
         # The data class has read the SAGE ini file.  Update the model with the parameters read and those specified by
         # the user. We will also log some of these.
@@ -723,9 +739,16 @@ class GalaxyAnalysis:
         elif snapshots == "All" or redshifts == "All":
             # User wants all snapshots (or equivalently redshifts).
             snapshots_for_models = [list(np.arange(len(model._redshifts)) - 1) for model in self._models]
+            #np.arange(stop) generates values in [0,stop), where stop is the length of the list of redshifts. So, len-1 gives max snapshot
         elif redshifts is not None:
             # User has specified which redshifts they want; convert to the corresponding snapshots.
-            snapshots_for_models = [find_closest_indices(model._redshifts, redshifts) for model in self._models]
+            # snapshots_for_models = [find_closest_indices(model._redshifts, redshifts) for model in self._models]
+
+            count = 0
+            snapshots_for_models = []
+            for model in self.models:
+                snapshots_for_models.append(find_closest_indices(model._redshifts, redshifts[count]))
+                count += 1
         elif snapshots is not None:
             # Otherwise the user has specified exactly what snapshots they want.
             snapshots_for_models = snapshots
@@ -805,11 +828,11 @@ class GalaxyAnalysis:
         if self._plot_toggles == {}:
             logger.debug(f"No plot toggles specified.")
             return
-
+        # print(snapshots)
+        # print(redshifts)
         baseline_snapshots_models = self._determine_snapshots_to_use(snapshots, redshifts)
-
+        
         for model, baseline_snapshots in zip(self._models, baseline_snapshots_models):
-
             logger.info(f"Analyzing baseline snapshots {baseline_snapshots}")
 
             for snap in baseline_snapshots:

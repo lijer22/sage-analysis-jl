@@ -22,6 +22,45 @@ from scipy import stats
 
 from sage_analysis.model import Model
 
+# def calc_BHMF(
+#     model: Model,
+#     gals,
+#     snapshot: int,
+#     calc_sub_populations: bool = False,
+#     smf_property_name: str = "SMF"
+# ):
+#     """
+#     Calculates the stellar mass function of the given galaxies.  That is, the number of galaxies at a given stellar
+#     mass.
+
+#     The ``Model.properties["snapshot_<snapshot>"]"SMF"]`` array will be updated. We also split the galaxy population
+#     into "red" and "blue" based on the value of :py:attr:`~sage_analysis.model.Model.sSFRcut` and update the
+#     ``Model.properties["snapshot_<snapshot>"]["red_SMF"]`` and ``Model.properties["snapshot_<snapshot>"]["blue_SMF"]``
+#     arrays.
+
+#     Parameters
+#     ----------
+#     snapshot : int
+#         The snapshot the SMF is being calculated at.
+
+#     plot_sub_populations : boolean, optional
+#         If ``True``, calculates the stellar mass function for red and blue sub-populations.
+
+#     smf_property_name : string, optional
+#         The name of the property used to store the stellar mass function. Useful if different calculations are
+#         computing the stellar mass function but saving it as a different property.
+#     """
+
+#     non_zero_bh = np.where(gals["BlackHoleMass"][:] > 0.0)[0]
+
+#     if len(non_zero_bh) == 0:
+#         logger.info(f"Could not find any galaxies with non-zero stellar mass for the stellar mass function.")
+#         return
+
+#     bh_mass = np.log10(gals["BlackHoleMass"][:][non_zero_bh] * 1.0e10 / model.hubble_h)
+
+#     gals_per_bin, _ = np.histogram(bh_mass, bins=np.arange(4.0, 12.0 + 0.1, 0.1))
+#     model.properties[f"snapshot_{snapshot}"][f"{smf_property_name}"] += gals_per_bin
 
 def calc_SMF(
     model: Model,
@@ -255,7 +294,6 @@ def calc_metallicity(model, gals, snapshot: int):
         model.properties[f"snapshot_{snapshot}"]["metallicity"], Z
     )
 
-
 def calc_bh_bulge(model, gals, snapshot: int):
     """
     Calculates the black hole mass as a function of bulge mass.
@@ -277,7 +315,7 @@ def calc_bh_bulge(model, gals, snapshot: int):
     # Select a random subset of galaxies (if necessary).
     my_gals = model.select_random_galaxy_indices(
         my_gals, len(model.properties[f"snapshot_{snapshot}"]["bh_mass"])
-    )
+    ) # list of indices
 
     bh = np.log10(gals["BlackHoleMass"][:][my_gals] * 1.0e10 / model.hubble_h)
     bulge = np.log10(gals["BulgeMass"][:][my_gals] * 1.0e10 / model.hubble_h)
@@ -289,6 +327,37 @@ def calc_bh_bulge(model, gals, snapshot: int):
         model.properties[f"snapshot_{snapshot}"]["bulge_mass"], bulge
     )
 
+def calc_bh_sm(model, gals, snapshot: int):
+    """
+    Calculates the black hole mass as a function of stellar mass.
+
+    The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["BlackHoleMass"]`` and
+    ``Model.propertiesp["snapshot_<snapshot>"]["BulgeMass"]`` arrays is given by
+    :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_galaxies_passed /``
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than
+    ``number_galaxies_passed``, then all galaxies will be used.
+
+    Notes
+    -----
+    """
+
+    # Only care about galaxies that have appreciable masses.
+    my_gals = np.where((gals["StellarMass"][:] > 0.000001) & (gals["BlackHoleMass"][:] > 0.000000001))[0]
+
+    # Select a random subset of galaxies (if necessary).
+    my_gals = model.select_random_galaxy_indices(
+        my_gals, len(model.properties[f"snapshot_{snapshot}"]["bh_mass"])
+    ) # list of indices
+
+    bh = np.log10(gals["BlackHoleMass"][:][my_gals] * 1.0e10 / model.hubble_h)
+    sm = np.log10(gals["StellarMass"][:][my_gals] * 1.0e10 / model.hubble_h)
+
+    model.properties[f"snapshot_{snapshot}"]["bh_mass"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["bh_mass"], bh
+    )
+    model.properties[f"snapshot_{snapshot}"]["stellar_mass"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["stellar_mass"], sm
+    )
 
 def calc_quiescent(model, gals, snapshot: int):
     """

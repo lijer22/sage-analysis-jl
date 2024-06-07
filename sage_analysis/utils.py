@@ -264,6 +264,10 @@ def find_closest_indices(values: List[float], target_values: List[float]) -> Lis
     """
     Finds the indices in ``values`` that result in values closest to ``target_values``.
     """
+    # closest_indices = []
 
+    # for target_value in target_values:
+    #     np.abs(values - target_values)
+    
     closest_indices = [(np.abs(values - target_value)).argmin() for target_value in target_values]
     return closest_indices

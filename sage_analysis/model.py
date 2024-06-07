@@ -518,6 +518,7 @@ class Model(object):
 
         # Ensure that we're pointing at the correct snapshot. This allows the model path to point to the correct file.
         self.data_class.update_snapshot_and_data_path(self, snapshot)
+        # this line re-opens the hdf5 file if needed
 
         # First determine how many galaxies are in all files.
         self.data_class.determine_num_gals(self, snapshot)
@@ -541,9 +542,10 @@ class Model(object):
 
         # Now read the galaxies and calculate the properties.
         for file_num in range(self.first_file_to_analyze, self.last_file_to_analyze + 1):
-
+            # print(file_num) # debugging
             # This is Data Class specific. Refer to the relevant module for implementation.
             gals = self.data_class.read_gals(self, file_num, snapshot, pbar=pbar, debug=debug)
+            # recall that files
 
             # We may have skipped a file.
             if gals is None:
@@ -622,8 +624,8 @@ class Model(object):
         num_inds_per_file = self._sample_size / (self._last_file_to_analyze - self._first_file_to_analyze + 1)
 
         # Based on the number of files that have been analyzed so far, how far are we off our target?
-        target_num_inds_so_far = self._num_files_analyzed * num_inds_per_file
-        num_inds_defecit = target_num_inds_so_far - num_inds_selected_already
+        target_num_inds_so_far = self._num_files_analyzed * num_inds_per_file  # how many we should've selected
+        num_inds_defecit = target_num_inds_so_far - num_inds_selected_already  # ... - how many we have selected
 
         logger.info(
             f"Thus far, analyzed {self._num_files_analyzed} files and selected {num_inds_selected_already} random "
@@ -646,5 +648,4 @@ class Model(object):
 
                 print(msg)
                 logger.info(msg)
-
         return selected_inds

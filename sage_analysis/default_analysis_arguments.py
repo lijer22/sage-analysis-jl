@@ -50,7 +50,7 @@ default_galaxy_properties_to_analyze = {
             "metallicity", "bh_mass", "bulge_mass", "reservoir_mvir",
             "reservoir_stars", "reservoir_cold", "reservoir_hot",
             "reservoir_ejected", "reservoir_ICS", "x_pos",
-            "y_pos", "z_pos"
+            "y_pos", "z_pos", "stellar_mass"
         ],
     },
     "single_properties": {
